@@ -7,6 +7,8 @@ import productsRoute from "./routes/products.js";
 import reviewsRoute from "./routes/reviews.js";
 import ordersRoute from "./routes/orders.js";
 import adminRoute from "./routes/admin.js";
+import bannersRoute from "./routes/banners.js";
+import settingsRoute from "./routes/settings.js";
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -34,6 +36,8 @@ app.use("/api/products", productsRoute);
 app.use("/api/reviews", reviewsRoute);
 app.use("/api/orders", ordersRoute);
 app.use("/api/admin", adminRoute);
+app.use("/api/banners", bannersRoute);
+app.use("/api/settings", settingsRoute);
 
 app.get("/", (req, res) => {
   res.send({ message: "ShopNest server is running" });

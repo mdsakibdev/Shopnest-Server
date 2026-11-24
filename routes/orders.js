@@ -6,10 +6,37 @@ import { verifyToken, verifyAdmin } from "../middlewares/verifyToken.js";
 
 const router = express.Router();
 
-// Delivery charges for now — in Step 14 these move into the admin
-// Settings, so each shop owner can change them.
-const DELIVERY_INSIDE_DHAKA = 60;
-const DELIVERY_OUTSIDE_DHAKA = 120;
+// Delivery charges live in the admin Settings now (Step 14).
+// These two numbers are only the fallback when no Settings
+// have been saved yet.
+const DEFAULT_DELIVERY_INSIDE = 60;
+const DEFAULT_DELIVERY_OUTSIDE = 120;
+
+// Read the delivery charges from the single settings document.
+// A charge of 0 (free delivery) counts — only a missing or broken
+// value falls back to the defaults above.
+async function getDeliveryCharges() {
+  const fallback = {
+    inside: DEFAULT_DELIVERY_INSIDE,
+    outside: DEFAULT_DELIVERY_OUTSIDE,
+  };
+  try {
+    const settings = getCollection("settings");
+    if (!settings) return fallback;
+    const doc = await settings.findOne({});
+    if (!doc) return fallback;
+    return {
+      inside: Number.isFinite(Number(doc.deliveryInside))
+        ? Number(doc.deliveryInside)
+        : DEFAULT_DELIVERY_INSIDE,
+      outside: Number.isFinite(Number(doc.deliveryOutside))
+        ? Number(doc.deliveryOutside)
+        : DEFAULT_DELIVERY_OUTSIDE,
+    };
+  } catch {
+    return fallback;
+  }
+}
 
 const ORDER_STATUSES = [
   "pending",
@@ -121,8 +148,9 @@ router.post("/", async (req, res) => {
     subtotal += price * quantity;
   }
 
+  const charges = await getDeliveryCharges();
   const deliveryCharge =
-    area === "inside" ? DELIVERY_INSIDE_DHAKA : DELIVERY_OUTSIDE_DHAKA;
+    area === "inside" ? charges.inside : charges.outside;
 
   const user = await tryGetUser(req);
 
